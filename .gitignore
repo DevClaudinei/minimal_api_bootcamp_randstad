@@ -1,0 +1,29 @@
+# Arquivos e pastas de IDE
+.idea/
+.vscode/
+*.suo
+*.user
+*.csproj.user
+
+# Binários e objetos compilados
+bin/
+obj/
+
+# Arquivos de migrações (opcional)
+Migrations/
+
+# Arquivos sensíveis de configuração
+appsettings.json
+appsettings.Development.json
+
+# Pacotes de dependência
+packages/
+node_modules/
+
+# Logs
+*.log
+
+# Arquivos temporários
+*.tmp
+*.temp
+
