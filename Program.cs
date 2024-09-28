@@ -35,6 +35,25 @@ app.MapPost("/administrators/login/{loginDto}", ([FromBody] LoginDto loginDto, I
         return Results.BadRequest(ex.Message);
     }
 }).WithTags("Administrators");
+
+app.MapPost("/administrators/", (CreateAdministrator createAdministrator, IAdministratorService administratorService) => {
+    try
+    {
+        var admin = administratorService.Insert(createAdministrator);
+        return Results.Ok($"Create administrator with Id: {admin}");
+    }
+    catch (BadRequestException ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+}).WithTags("Administrators");
+
+app.MapGet("/administrators/", ([FromQuery] int? page, IAdministratorService administratorService) => 
+{
+    var administrators = administratorService.GetAll(page);
+
+    return Results.Ok(administrators);
+}).WithTags("Administrators");
 #endregion
 
 #region Vehicles

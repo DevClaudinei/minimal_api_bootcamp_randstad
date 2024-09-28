@@ -19,14 +19,25 @@ namespace minimal_api.DomainServices
 
         public long Insert(VehicleDto vehicleDto)
         {
-            var vehicle = VehicleTransformation(vehicleDto);
+            ValidateFieldsVehicle(vehicleDto);
+            var vehicle = CreateVehicle(vehicleDto);
             _dataContext.Vehicles.Add(vehicle);
             _dataContext.SaveChanges();
 
             return vehicle.Id;
         }
 
-        private Vehicle VehicleTransformation(VehicleDto vehicleDto)
+        private void ValidateFieldsVehicle(VehicleDto vehicleDto)
+        {
+            if (string.IsNullOrEmpty(vehicleDto.Name))
+                throw new BadRequestException("Name is required");
+            if (string.IsNullOrEmpty(vehicleDto.Brand))
+                throw new BadRequestException("Brand is required");
+            if (vehicleDto.Year < 1900)
+                throw new BadRequestException("Year must be at least 1900");
+        }
+
+        private Vehicle CreateVehicle(VehicleDto vehicleDto)
         {
             var vehicle = new Vehicle
             {
@@ -62,7 +73,7 @@ namespace minimal_api.DomainServices
             return vehicle;
         }
 
-        private void UpdateVehicle(Vehicle vehicleFound, VehicleDto vehicleDto)
+        private void TransformDtoInVehicle(Vehicle vehicleFound, VehicleDto vehicleDto)
         {
             vehicleFound.Name = vehicleDto.Name;
             vehicleFound.Brand = vehicleDto.Brand;
@@ -72,7 +83,7 @@ namespace minimal_api.DomainServices
         public void Update(long id, VehicleDto vehicleDto)
         {
             var vehicleFound = GetById(id);
-            UpdateVehicle(vehicleFound, vehicleDto);
+            TransformDtoInVehicle(vehicleFound, vehicleDto);
             
             _dataContext.Update(vehicleFound);
             _dataContext.SaveChanges();
