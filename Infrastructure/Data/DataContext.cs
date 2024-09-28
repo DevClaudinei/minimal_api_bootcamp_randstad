@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using minimal_api.Application.Models.Enums;
 using minimal_api.Domain.Models.Models;
 
 namespace minimal_api.Infrastructure.Data
@@ -23,7 +24,7 @@ namespace minimal_api.Infrastructure.Data
                     Id = 1,
                     Email = "admin@bluphy.com.br",
                     Password = "B1l2u3p4h5y6",
-                    Profile = "Admin"
+                    Profile = Profile.Admin
                 }
             );
         }

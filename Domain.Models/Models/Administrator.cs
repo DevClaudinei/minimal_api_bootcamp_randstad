@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using minimal_api.Application.Models.Enums;
 
 namespace minimal_api.Domain.Models.Models
 {
@@ -19,6 +20,6 @@ namespace minimal_api.Domain.Models.Models
 
         [Required]
         [StringLength(10)]
-        public string Profile { get; set; }
+        public Profile Profile { get; set; }
     }
 }
