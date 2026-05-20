@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Infraestrutura Base Nativa .NET 7.0 (Via Script Oficial) para Esteira de CI/CD'
+Description: 'Infraestrutura Base Nativa .NET 7.0 (Com Dependências Corrigidas) para Esteira de CI/CD'
 
 Resources:
   VpcMinimalAPI:
@@ -90,19 +90,20 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash
           apt-get update -y
-          apt-get install -y wget apt-transport-https zip unzip
+          # CORREÇÃO: libicu-dev adicionada para permitir a extração e execução estável do .NET 7
+          apt-get install -y wget apt-transport-https zip unzip libicu-dev
 
-          # AUTOMAÇÃO CRÍTICA: Baixa e executa o script oficial da Microsoft para instalar o runtime do .NET 7
+          # Baixa o script oficial da Microsoft
           wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh
           chmod +x /tmp/dotnet-install.sh
           
-          # Instala o runtime no diretório global /usr/share/dotnet
+          # Instala o runtime de produção de forma global
           /tmp/dotnet-install.sh --runtime dotnet --version 7.0.20 --install-dir /usr/share/dotnet
 
-          # Cria um link simbólico global para que o comando 'dotnet' responda em qualquer sessão SSH
+          # Vincula o executável de forma definitiva no PATH do Linux
           ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
 
-          # Prepara o diretório de deploy com as permissões corretas
+          # Prepara a pasta de deploy
           mkdir -p /var/www/minimal-api
           chown -R ubuntu:ubuntu /var/www/minimal-api
 
