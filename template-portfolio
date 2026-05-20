@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Infraestrutura Base Nativa .NET 7.0 (Com Dependências Corrigidas) para Esteira de CI/CD'
+Description: 'Infraestrutura Base Nativa .NET 7.0 (Com Dependências AspNetCore e LibIcu Corrigidas)'
 
 Resources:
   VpcMinimalAPI:
@@ -90,20 +90,21 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash
           apt-get update -y
-          # CORREÇÃO: libicu-dev adicionada para permitir a extração e execução estável do .NET 7
+          
+          # CORREÇÃO 1: Instalação da libicu-dev essencial para a extração do .NET 7 no Ubuntu 24.04
           apt-get install -y wget apt-transport-https zip unzip libicu-dev
 
-          # Baixa o script oficial da Microsoft
+          # Baixa o script oficial de automação da Microsoft
           wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh
           chmod +x /tmp/dotnet-install.sh
           
-          # Instala o runtime de produção de forma global
-          /tmp/dotnet-install.sh --runtime dotnet --version 7.0.20 --install-dir /usr/share/dotnet
+          # CORREÇÃO 2: Alterado de '--runtime dotnet' para '--runtime aspnetcore' para incluir as bibliotecas web do Kestrel
+          /tmp/dotnet-install.sh --runtime aspnetcore --version 7.0.20 --install-dir /usr/share/dotnet
 
-          # Vincula o executável de forma definitiva no PATH do Linux
+          # Vincula o executável de forma definitiva no PATH global do sistema
           ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
 
-          # Prepara a pasta de deploy
+          # Prepara a pasta de deploy com permissões para o usuário comum
           mkdir -p /var/www/minimal-api
           chown -R ubuntu:ubuntu /var/www/minimal-api
 
