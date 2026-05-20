@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Infraestrutura Base Nativa .NET 7.0 para Esteira de CI/CD via GitHub Actions'
+
+Resources:
+  VpcMinimalAPI:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: 'VPC-Portfolio-CICD'
+
+  SubnetPublicaAPI:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VpcMinimalAPI
+      CidrBlock: '10.0.1.0/24'
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: 'Subnet-Publica-CICD'
+
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: 'IGW-CICD'
+
+  VpcGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VpcMinimalAPI
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteTablePublica:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VpcMinimalAPI
+      Tags:
+        - Key: Name
+          Value: 'RT-CICD'
+
+  RotaParaInternet:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref RouteTablePublica
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+
+  SubnetAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetPublicaAPI
+      RouteTableId: !Ref RouteTablePublica
+
+  SecurityGroupMinimalAPI:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Libera portas para a API (5092) e acesso do GitHub Actions (22)'
+      VpcId: !Ref VpcMinimalAPI
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5092
+          ToPort: 5092
+          CidrIp: '0.0.0.0/0'
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: '0.0.0.0/0'
+      Tags:
+        - Key: Name
+          Value: 'SG-CICD-Randstad'
+
+  InstanciaServidorAPI:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: 't3.micro'
+      ImageId: 'ami-0eab37cfdc33e8e65' # Ubuntu 24.04 LTS em Ohio
+      SubnetId: !Ref SubnetPublicaAPI
+      SecurityGroupIds:
+        - !Ref SecurityGroupMinimalAPI
+      KeyName: 'testando-ci-cd' # Lembre-se de criar seu Key Pair no console EC2 e colocar o nome exato aqui!
+      Tags:
+        - Key: Name
+          Value: 'Servidor-Producao-API'
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          apt-get update -y
+          apt-get install -y wget apt-transport-https zip unzip
+          
+          # Configura o gerenciador de pacotes para obter versões anteriores do repositório de produção da Microsoft
+          wget https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+          dpkg -i packages-microsoft-prod.deb
+          rm packages-microsoft-prod.deb
+          
+          # Instala nativamente o Runtime do .NET 7.0 para execução leve em produção
+          apt-get update -y
+          apt-get install -y dotnet-runtime-7.0
+
+          # Prepara o diretório isolado que vai receber os deploys do GitHub
+          mkdir -p /var/www/minimal-api
+          chown -R ubuntu:ubuntu /var/www/minimal-api
+
+Outputs:
+  UrlAPI:
+    Description: 'URL pública para acessar o Swagger da API'
+    Value: !Sub 'http://${InstanciaServidorAPI.PublicIp}:5092/swagger/index.html'
+  IpPublicoEC2:
+    Description: 'IP Público da Instância para mapear no GitHub Secrets'
+    Value: !GetAtt InstanciaServidorAPI.PublicIp

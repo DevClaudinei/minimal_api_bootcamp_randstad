@@ -1,0 +1,55 @@
+name: Deploy Contínuo Nativo .NET 7.0 para AWS EC2 🚀
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Passo 1: Baixa o código fonte do repositório para o container do GitHub
+    - name: Checkout do Código
+      uses: actions/checkout@v4
+
+    # Passo 2: Instala o SDK correspondente ao seu projeto (.NET 7.0)
+    - name: Configurar .NET SDK 7.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '7.0.x'
+
+    # Passo 3: Restaura pacotes do NuGet e compila o projeto apontando para o seu arquivo real
+    - name: Executar Build e Publish Nativo
+      run: |
+        dotnet restore
+        dotnet publish minimal-api.csproj --configuration Release --output ./publish_folder
+
+    # Passo 4: Transfere os binários gerados de forma segura via SCP para a pasta /var/www/minimal-api na AWS
+    - name: Enviar arquivos via SSH/SCP para a Instância EC2
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.AWS_EC2_IP }}
+        username: ubuntu
+        key: ${{ secrets.AWS_PRIVATE_KEY }}
+        source: "./publish_folder/*"
+        target: "/var/www/minimal-api"
+        strip_components: 1
+
+    # Passo 5: Conecta via SSH no Ubuntu da AWS para reiniciar o serviço Kestrel de forma limpa
+    - name: Iniciar Serviço da API no Servidor de Produção
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.AWS_EC2_IP }}
+        username: ubuntu
+        key: ${{ secrets.AWS_PRIVATE_KEY }}
+        script: |
+          # Encerra graciosamente qualquer instância anterior do dotnet para liberar a porta 5092
+          sudo killall dotnet || true
+          
+          cd /var/www/minimal-api
+          export ASPNETCORE_ENVIRONMENT=Development
+          
+          # Inicia a aplicação usando o runtime nativo de .NET 7 configurado na máquina
+          nohup dotnet minimal-api.dll --urls "http://0.0.0.0:5092" > /tmp/minimal_api_cicd.log 2>&1 &
