@@ -51,5 +51,4 @@ jobs:
           cd /var/www/minimal-api
           export ASPNETCORE_ENVIRONMENT=Development
           
-          # Executa utilizando o atalho global configurado nativamente pela automação da AWS
           nohup dotnet minimal-api.dll --urls "http://0.0.0.0:5092" > /tmp/minimal_api_cicd.log 2>&1 &
