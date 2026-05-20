@@ -51,5 +51,5 @@ jobs:
           cd /var/www/minimal-api
           export ASPNETCORE_ENVIRONMENT=Development
           
-          # Inicia a aplicação usando o runtime nativo de .NET 7 configurado na máquina
-          nohup dotnet minimal-api.dll --urls "http://0.0.0.0:5092" > /tmp/minimal_api_cicd.log 2>&1 &
+          # CORREÇÃO: Utilizando o caminho absoluto do binário do .NET no Linux
+          nohup /usr/bin/dotnet minimal-api.dll --urls "http://0.0.0.0:5092" > /tmp/minimal_api_cicd.log 2>&1 &
