@@ -51,4 +51,8 @@ jobs:
           cd /var/www/minimal-api
           export ASPNETCORE_ENVIRONMENT=Development
           
-          nohup dotnet minimal-api.dll --urls "http://0.0.0.0:5092" > /tmp/minimal_api_cicd.log 2>&1 &
+          # CORREÇÃO CRÍTICA: Fechando a entrada de dados (</dev/null) para evitar que o SSH trave ou mate o Kestrel ao desconectar
+          nohup dotnet minimal-api.dll --urls "http://0.0.0.0:5092" > /tmp/minimal_api_cicd.log 2>&1 </dev/null &
+          
+          # Garante que o shell libere o processo filho imediatamente
+          disown
