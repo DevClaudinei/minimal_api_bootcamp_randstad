@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Infraestrutura Base Nativa .NET 7.0 para Esteira de CI/CD via GitHub Actions'
+Description: 'Infraestrutura Base Nativa .NET 7.0 (Via Script Oficial) para Esteira de CI/CD'
 
 Resources:
   VpcMinimalAPI:
@@ -82,7 +82,7 @@ Resources:
       SubnetId: !Ref SubnetPublicaAPI
       SecurityGroupIds:
         - !Ref SecurityGroupMinimalAPI
-      KeyName: 'testando-ci-cd' # Lembre-se de criar seu Key Pair no console EC2 e colocar o nome exato aqui!
+      KeyName: 'testando-ci-cd'
       Tags:
         - Key: Name
           Value: 'Servidor-Producao-API'
@@ -91,17 +91,18 @@ Resources:
           #!/bin/bash
           apt-get update -y
           apt-get install -y wget apt-transport-https zip unzip
-          
-          # Configura o gerenciador de pacotes para obter versões anteriores do repositório de produção da Microsoft
-          wget https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-          dpkg -i packages-microsoft-prod.deb
-          rm packages-microsoft-prod.deb
-          
-          # Instala nativamente o Runtime do .NET 7.0 para execução leve em produção
-          apt-get update -y
-          apt-get install -y dotnet-runtime-7.0
 
-          # Prepara o diretório isolado que vai receber os deploys do GitHub
+          # AUTOMAÇÃO CRÍTICA: Baixa e executa o script oficial da Microsoft para instalar o runtime do .NET 7
+          wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh
+          chmod +x /tmp/dotnet-install.sh
+          
+          # Instala o runtime no diretório global /usr/share/dotnet
+          /tmp/dotnet-install.sh --runtime dotnet --version 7.0.20 --install-dir /usr/share/dotnet
+
+          # Cria um link simbólico global para que o comando 'dotnet' responda em qualquer sessão SSH
+          ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+
+          # Prepara o diretório de deploy com as permissões corretas
           mkdir -p /var/www/minimal-api
           chown -R ubuntu:ubuntu /var/www/minimal-api
 
